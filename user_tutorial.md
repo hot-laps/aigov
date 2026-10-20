@@ -1,10 +1,37 @@
 # User Tutorial
 
-Describe one intended use of AI, answer a few questions, and review an advisory risk assessment. The assistant helps you identify risks and missing information. Final decisions remain with your human reviewers; the starter rubric is illustrative.
+Describe one intended use of AI, either by filling in a quick form or by chatting with the assistant, then review an advisory risk assessment. The assistant helps you identify risks and missing information. Final decisions remain with your human reviewers; the starter rubric is illustrative.
 
-The screenshots follow one example conversation. Your questions and scores will depend on your answers. Every screenshot is open by default inside a bordered frame. You can collapse a screenshot if you want to skim the instructions.
+The screenshots follow one example conversation in Guided Intake. Your questions and scores will depend on your answers. Every screenshot is open by default inside a bordered frame. You can collapse a screenshot if you want to skim the instructions.
 
-## 1. Start a conversation
+## 1. Choose how to start
+
+There are two ways to describe your use case. Both lead to the same assessment.
+
+| | **Intake Form** | **Guided Intake** |
+|---|---|---|
+| How it works | Click options in a form | Describe your use case in a chat |
+| Best when | You know most of the facts and want to be quick | You want help working out what matters, or your use case doesn't fit standard options |
+| Risk hints | Shown immediately as you select options | Shown in the assessment |
+
+The app opens on **Intake Form**. After you submit the form you can still use the chat to correct or add details, so you can combine the two.
+
+## 2. Option A: Fill in the Intake Form
+
+Choose **Intake Form** in the top navigation (it opens first).
+
+1. **Type the basics.** Give a short title, your team, the tool's name, and a sentence or two on the problem it solves.
+2. **Click the options that fit.** Most questions are buttons. Some allow several choices; hover over the **?** next to a question to see whether it takes one or several.
+3. **Use Other or Not sure yet.** **Other** opens a small box to describe your answer. **Not sure yet** marks the fact as unknown; the assessment will list it as information needed. Don't guess at vendor terms or permissions.
+4. **Watch the risk flags.** When an option may be risky, a flag appears right under the question: **orange for medium risk** and **red for high risk**. It explains why and names the related rubric item (D1–D6 for the scored dimensions, B1 or B2 for the blocking rules). Some combinations raise an extra flag, for example sensitive data with a vendor that may train on it.
+5. **Check the Risk flags panel.** The panel on the right stays visible as you scroll. It shows the overall preliminary risk, every flag so far, and how many of the 17 required topics you've answered.
+6. **Select Submit and assess.** The app moves to **Guided Intake**, shows your answers and the flags in the chat, and starts the assessment. Continue with **Read your assessment** below.
+
+Flags are a quick preliminary check based on fixed rules. They are not the assessment result: the assessment applies the full rubric and makes the recommendation. A flag tells you what reviewers will look at closely, and which safeguards may help.
+
+To start over, select **Clear form** at the top right of the form.
+
+## 3. Option B: Start a conversation in Guided Intake
 
 Choose **Guided Intake** in the top navigation. Type into **Describe your intended use** at the bottom of the chat, then select the send arrow.
 
@@ -24,7 +51,7 @@ While the assistant reviews your answers, keep the chat open. The spinner shows 
 
 ![Reviewing answers — follow-up questions, the thinking indicator, and the input box](screenshots/Screenshot%202026-10-02%20at%206.04.11%E2%80%AFPM.png)
 
-## 2. Get to know the four icons
+## 4. Get to know the four icons
 
 These small buttons appear to the right of **AI Use-Case Assistant**. Hover over one to see its label.
 
@@ -37,9 +64,9 @@ These small buttons appear to the right of **AI Use-Case Assistant**. Hover over
 
 Close a dialog with **Close** or its **×** to return to the chat. Viewing the current request or conversation makes no AI call.
 
-## 3. Read your assessment
+## 5. Read your assessment
 
-When the request is sufficiently described, the chat shows **Intake complete → switching to ASSESSMENT** and opens the assessment dialog automatically. You can also select the green checklist whenever you want a partial assessment.
+If you submitted the **Intake Form**, the assessment dialog opens right away. In the chat, when the request is sufficiently described, the chat shows **Intake complete → switching to ASSESSMENT** and opens the assessment dialog automatically. You can also select the green checklist whenever you want a partial assessment.
 
 During AI work, a thinking indicator shows elapsed time. The completed request shows the total time taken.
 
@@ -69,9 +96,9 @@ For each related precedent, read both **Similarities** and **Differences**. Open
 
 ![Related precedents — comparisons explaining similarities and important differences](screenshots/Screenshot%202026-10-02%20at%206.07.43%E2%80%AFPM.png)
 
-## 4. Correct or complete your request
+## 6. Correct or complete your request
 
-Close the assessment dialog and send another chat message to add missing details or correct a misunderstanding. Be explicit, for example: **Correction: the tool sends drafts only to me; it does not email anyone else.**
+Close the assessment dialog and send another chat message to add missing details or correct a misunderstanding. This works the same whether you started with the Intake Form or the chat. Be explicit, for example: **Correction: the tool sends drafts only to me; it does not email anyone else.**
 
 The assistant reviews the updated request. A complete request can still have high risk; completeness is not approval.
 
@@ -81,7 +108,7 @@ If the assistant shows **Facts to clarify**, answer those points explicitly. In 
 
 Even after intake is complete, the assessment may identify more detailed information it needs. Return to the chat and answer the report's questions, then select **Assess input so far** again when ready.
 
-## 5. Explore the other pages
+## 7. Explore the other pages
 
 **History & Precedents** contains example requests, decisions, and reasons. **Rubrics** explains the scoring criteria and blockers. **Prompts** contains the assistant's instructions. Rubrics and prompts can be edited and saved when you want to refine this prototype.
 
@@ -97,12 +124,12 @@ On **Prompts**, open Intake, Assessment, or Comparison to read its instructions.
 
 ![Prompts — separate instruction editors and their save buttons](screenshots/Screenshot%202026-10-02%20at%206.08.35%E2%80%AFPM.png)
 
-In **Settings**, choose a model and select **Save settings**. The default is GPT-5.6-Luna. Changes apply to later AI requests; existing reports retain the model used for their run.
+In **Settings**, choose a model and select **Save settings**. The default is Gemini 3.8 Flash; the screenshot below shows an earlier version of the model list. Changes apply to later AI requests; existing reports retain the model used for their run.
 
 ![Settings — the model selector, Save settings, and the currently selected model](screenshots/Screenshot%202026-10-02%20at%206.08.44%E2%80%AFPM.png)
 
-## 6. If a step does not finish
+## 8. If a step does not finish
 
 Your conversation stays available in the current session. Use **Retry last message**, **Retry assessment**, or **Retry precedent comparison** as offered. You do not need to retype your answers. If the message asks for an API key or quota change, contact the app owner; an unavailable model can be changed in Settings.
 
-The app keeps one active request. Switching pages preserves the conversation, but refreshing the browser or restarting the app can clear it. Copy **Conversation so far** before leaving if you want to keep your work.
+The app keeps one active request. Switching pages preserves the conversation, but refreshing the browser or restarting the app can clear it. Copy **Conversation so far** before leaving if you want to keep your work. Intake Form answers survive switching pages but are cleared by a refresh, so submit the form before closing the browser tab.

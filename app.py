@@ -587,8 +587,14 @@ def render_tutorial():
                 st.markdown(section)
 
 
+def keep_form_answers():
+    for key in [key for key in st.session_state if str(key).startswith("form_") and not str(key).endswith(("_clear", "_submit"))]:
+        st.session_state[key] = st.session_state[key]
+
+
 def main():
     st.set_page_config(page_title="AI Governance Assistant", page_icon="◈", layout="wide")
+    keep_form_answers()
     state = initialize_session()
     configuration = run_action(workflow.load_configuration, "The configuration could not be loaded. Review the rubric and prompts below.")
     if configuration is None:
@@ -597,7 +603,7 @@ def main():
     precedents = run_action(workflow.load_precedents, "Precedents could not be read. Assessment is still available; comparisons will wait until the Markdown files can be read.")
     chat_page = st.Page(lambda: render_intake(state, configuration, precedents), title="Guided Intake", url_path="intake")
     pages = [
-        st.Page(lambda: render_new_intake(configuration, chat_page), title="New Intake", url_path="new", default=True),
+        st.Page(lambda: render_new_intake(configuration, chat_page), title="Intake Form", url_path="form", default=True),
         chat_page,
         st.Page(lambda: render_precedents(precedents or []), title="History & Precedents", url_path="precedents"),
         st.Page(lambda: render_rubrics(configuration), title="Rubrics", url_path="rubrics"),
