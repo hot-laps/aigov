@@ -31,8 +31,9 @@ Open [localhost:8501](http://localhost:8501), or the local URL printed by Stream
 
 The Streamlit default model is `gemini-3.8-flash`. The **Settings** page offers Gemini 4 Argon, Gemini 3.8 Flash, and Gemini 3.5 Flash-Lite. Save the selected model to apply it to subsequent intake, assessment, and comparison calls. Settings are saved in `data/settings.json` and survive restarts; the selected model takes precedence over `GEMINI_MODEL`. Before settings are saved, a supported `GEMINI_MODEL` value supplies the default. Model availability depends on the API key's project and tier. Browsing precedents and editing configuration do not need an API key.
 
-## Use the six pages
+## Use the seven pages
 
+- **New Intake (opens first):** A quick-select form covering every intake field, grouped into Basics, Users and affected people, Data, Outputs and autonomy, and Controls. Most questions are clickable options, with Other and Not sure yet where useful. Options that may be medium or high risk are flagged under the question and in a sticky **Risk flags** panel, tagged with the rubric dimension (D1–D6) or blocking rule (B1, B2); some combinations, such as sensitive data with vendor training, raise a blocker flag. Flags are a preliminary check only. **Submit and assess** copies the answers into a new request, opens Guided Intake with the answers and flags in the chat, and runs the assessment. Options, risk levels, and reasons are defined in `intake_form.py`.
 - **Guided Intake:** Describe one use case in the enclosed chat, with scrollable messages and the input at the bottom. The assistant summarizes the supplied facts and asks four or five focused questions together when several facts are missing, with fewer questions when little remains. Useful questions offer labeled choices plus Other and Unknown. Correct facts by sending another message; select **Show current request** to inspect the structured facts in a dismissible modal. Unknown answers remain unanswered.
 - **History & Precedents:** Read the Markdown files describing earlier requests, fictional recorded human outcomes, reasons, and conditions. Six examples include low-risk use, conditional approval, policy blockers, employment impact, and incomplete information. Two customer-email cases illustrate different outcomes for similar purposes with different vendor controls.
 - **Rubrics:** Edit the six dimensions, their 0–3 scoring anchors, and illustrative blocking rules. **Save rubric** writes `rubric.json`.
@@ -62,7 +63,8 @@ The highest known dimension score determines risk. Explicit blockers override th
 
 | File or directory | Purpose |
 |---|---|
-| `app.py` | Streamlit layout, chat actions, assessment progress, and configuration editors |
+| `app.py` | Streamlit layout, intake form, chat actions, assessment progress, and configuration editors |
+| `intake_form.py` | Intake form questions, options, risk flags, and conversion to request fields |
 | `workflow.py` | Source-backed intake, rubric-shaped assessment, conservative findings, and Markdown precedent comparison |
 | `core.py` | Existing SDK calls, evidence validation, and deterministic assessment rules; unchanged in this UI revision |
 | `data/settings.json` | Saved model selection; no requests or credentials |

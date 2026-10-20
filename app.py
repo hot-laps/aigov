@@ -11,6 +11,7 @@ import streamlit as st
 from google.genai.errors import APIError
 
 import core
+import intake_form
 import workflow
 
 
@@ -363,6 +364,103 @@ def render_intake(state, configuration, precedents):
         assessment_dialog(state, configuration, precedents)
 
 
+def show_flag(flag):
+    if flag.risk == "high":
+        st.error(f"**High risk** ({flag.rubric}) · {flag.reason}", icon=":material/error:")
+    else:
+        st.warning(f"**Medium risk** ({flag.rubric}) · {flag.reason}", icon=":material/warning:")
+
+
+def render_question(item, key, answers, others):
+    if item.kind == "text":
+        answers[item.key] = st.text_input(item.label, key=key(item.key), placeholder=item.help)
+        return
+    if item.kind == "area":
+        answers[item.key] = st.text_area(item.label, key=key(item.key), height=80, placeholder=item.help)
+        return
+    mode = "multi" if item.kind == "multi" else "single"
+    hint = "Select all that apply" if mode == "multi" else "Select one"
+    answers[item.key] = st.pills(item.label, [choice.label for choice in item.options], selection_mode=mode, key=key(item.key), help=hint)
+    chosen = intake_form.selected(answers, item.key)
+    if intake_form.OTHER in chosen:
+        others[item.key] = st.text_input(f"Other: {item.label}", key=key(f"{item.key}_other"), placeholder="Describe what applies", label_visibility="collapsed")
+    for choice in item.options:
+        if choice.risk and choice.label in chosen:
+            show_flag(intake_form.Flag(risk=choice.risk, rubric=choice.rubric, question=item.label, reason=choice.reason))
+
+
+def submit_intake_form(answers, others, flags, configuration, chat_page):
+    request = intake_form.request_from(answers, others)
+    session = workflow.new_session()
+    case = session["case"]
+    core.update_request(case, request)
+    case["request_sources"] = {
+        key: [{"source_id": "intake_form", "kind": "intake_form", "content": value}]
+        for key, value in request.items() if not core.is_unknown(value)
+    }
+    case["conversation"] = [
+        {"role": "user", "content": intake_form.summary_message(request)},
+        {"role": "assistant", "content": intake_form.flags_message(flags)},
+    ]
+    case["confirmed"] = True
+    session.update(mode="assessment", configuration=deepcopy(configuration), assessment_origin="manual",
+                   pending_assessment=True, interface_version=2)
+    st.session_state.active_request = session
+    st.session_state.form_id += 1
+    st.switch_page(chat_page)
+
+
+def render_new_intake(configuration, chat_page):
+    st.session_state.setdefault("form_id", 0)
+    form_id = st.session_state.form_id
+
+    def key(name):
+        return f"form_{form_id}_{name}"
+
+    st.html("""
+        <style>
+        .stMainBlockContainer {padding-top: 4rem;}
+        [data-testid='stColumn']:has(.st-key-risk_panel) {position: sticky; top: 4.5rem; align-self: flex-start;}
+        </style>
+    """)
+    heading, clear = st.columns([5, 1], vertical_alignment="center")
+    heading.markdown("### New AI use case intake")
+    if clear.button("Clear form", icon=":material/restart_alt:", key=key("clear")):
+        st.session_state.form_id += 1
+        st.rerun()
+    st.caption("Select the options that fit best. Selections that may be medium or high risk are flagged as you go. Choose **Not sure yet** when you don't know; the assessment will list it as information needed.")
+    answers, others = {}, {}
+    form_column, panel = st.columns([2, 1], gap="large")
+    with form_column:
+        for section in intake_form.SECTIONS:
+            with st.container(border=True):
+                st.markdown(f"#### {section}")
+                for item in intake_form.QUESTIONS:
+                    if item.section == section:
+                        render_question(item, key, answers, others)
+    flags = intake_form.flags_for(answers)
+    request = intake_form.request_from(answers, others)
+    answered = len(core.MATERIAL_FIELDS) - len(core.missing_fields(request))
+    with panel:
+        with st.container(border=True, key="risk_panel"):
+            st.markdown("#### Risk flags")
+            risk = intake_form.preliminary_risk(flags)
+            high = sum(flag.risk == "high" for flag in flags)
+            medium = len(flags) - high
+            if risk == "high":
+                st.error(f"**Potentially high risk** · {high} high, {medium} medium", icon=":material/error:")
+            elif risk == "medium":
+                st.warning(f"**Potentially medium risk** · {medium} medium", icon=":material/warning:")
+            else:
+                st.success("No risk flags so far", icon=":material/check_circle:")
+            for flag in flags:
+                st.markdown(f"{'🔴' if flag.risk == 'high' else '🟠'} **{flag.rubric}** · {flag.reason}")
+            st.caption("Flags are a quick preliminary check. The AI assessment applies the full rubric and makes the recommendation.")
+            st.progress(answered / len(core.MATERIAL_FIELDS), text=f"{answered} of {len(core.MATERIAL_FIELDS)} required topics answered")
+            if st.button("Submit and assess", type="primary", icon=":material/fact_check:", key=key("submit"), disabled=answered == 0, width="stretch"):
+                submit_intake_form(answers, others, flags, configuration, chat_page)
+
+
 def render_precedents(precedents):
     st.subheader("History & Precedents")
     st.write("Each precedent is a Markdown file describing a request, a recorded decision, and the reasons. The supplied examples and human decisions are fictional.")
@@ -497,8 +595,10 @@ def main():
         repair_configuration()
         return
     precedents = run_action(workflow.load_precedents, "Precedents could not be read. Assessment is still available; comparisons will wait until the Markdown files can be read.")
+    chat_page = st.Page(lambda: render_intake(state, configuration, precedents), title="Guided Intake", url_path="intake")
     pages = [
-        st.Page(lambda: render_intake(state, configuration, precedents), title="Guided Intake", url_path="intake", default=True),
+        st.Page(lambda: render_new_intake(configuration, chat_page), title="New Intake", url_path="new", default=True),
+        chat_page,
         st.Page(lambda: render_precedents(precedents or []), title="History & Precedents", url_path="precedents"),
         st.Page(lambda: render_rubrics(configuration), title="Rubrics", url_path="rubrics"),
         st.Page(lambda: render_prompts(configuration), title="Prompts", url_path="prompts"),
