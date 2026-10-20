@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
 
@@ -34,7 +35,7 @@ FIELDS = {
 }
 MATERIAL_FIELDS = [key for key in FIELDS if key not in {"title", "owner"}]
 PROMPT_NAMES = ("intake", "assessment", "comparison")
-DEFAULT_MODEL = "gpt-6.1-sol"
+DEFAULT_MODEL = "gemini-3.8-flash"
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -227,8 +228,10 @@ def get_api_key():
     path = BASE_DIR / ".streamlit" / "secrets.toml"
     if path.exists():
         with path.open("rb") as file:
-            return tomllib.load(file).get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    return os.getenv("OPENAI_API_KEY")
+            key = tomllib.load(file).get("GEMINI_API_KEY")
+        if key:
+            return key
+    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
 
 def validate_evidence(evidence, request):
@@ -240,19 +243,21 @@ def validate_evidence(evidence, request):
 
 
 def call_model(prompt, payload, schema, model=None):
-    client = OpenAI(api_key=get_api_key(), max_retries=0, timeout=60)
-    response = client.responses.parse(
-        model=model or os.getenv("OPENAI_MODEL", DEFAULT_MODEL),
-        store=False,
-        input=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-        ],
-        text_format=schema,
+    client = genai.Client(api_key=get_api_key(), http_options=types.HttpOptions(
+        timeout=60_000, retry_options=types.HttpRetryOptions(attempts=1),
+    ))
+    response = client.models.generate_content(
+        model=model or os.getenv("GEMINI_MODEL", DEFAULT_MODEL),
+        contents=json.dumps(payload, ensure_ascii=False),
+        config=types.GenerateContentConfig(
+            system_instruction=prompt,
+            response_mime_type="application/json",
+            response_json_schema=schema.model_json_schema(),
+        ),
     )
-    if response.output_parsed is None:
+    if not response.text:
         raise ValueError("The model returned no complete structured result. No assessment was saved.")
-    return response.output_parsed
+    return schema.model_validate_json(response.text)
 
 
 def clarify_request(case, configuration, model=None):
@@ -346,7 +351,7 @@ def assess_request(case, configuration, model=None):
     return {
         "id": str(uuid4()), "created_at": now(), "request_revision": case["revision"],
         "request": deepcopy(case["request"]), "configuration": deepcopy(configuration),
-        "model": model or os.getenv("OPENAI_MODEL", DEFAULT_MODEL),
+        "model": model or os.getenv("GEMINI_MODEL", DEFAULT_MODEL),
         "assessment": assessment.model_dump(),
         "decision": recommendation_for(assessment, case["request"]),
         "matches": [], "comparison_status": "Not run",

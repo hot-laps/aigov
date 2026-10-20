@@ -13,11 +13,11 @@ RUBRIC_PATH = core.BASE_DIR / "rubric.json"
 PROMPTS_DIR = core.BASE_DIR / "prompts"
 PRECEDENTS_DIR = core.BASE_DIR / "precedents"
 SETTINGS_PATH = core.BASE_DIR / "data" / "settings.json"
-DEFAULT_MODEL = "gpt-5.6-luna"
+DEFAULT_MODEL = "gemini-3.8-flash"
 MODELS = {
-    "gpt-6.1-sol": "GPT-6.1-Sol",
-    "gpt-5.6-terra": "GPT-5.6-Terra",
-    "gpt-5.6-luna": "GPT-5.6-Luna",
+    "gemini-4-argon": "Gemini 4 Argon",
+    "gemini-3.8-flash": "Gemini 3.8 Flash",
+    "gemini-3.5-flash-lite": "Gemini 3.5 Flash-Lite",
 }
 RequestField = Enum("RequestField", {key: key for key in core.FIELDS}, type=str)
 
@@ -77,7 +77,7 @@ def new_session():
 
 
 def load_settings():
-    model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+    model = os.getenv("GEMINI_MODEL", DEFAULT_MODEL)
     settings = core.read_json(SETTINGS_PATH, {})
     if not isinstance(settings, dict):
         settings = {}

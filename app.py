@@ -6,8 +6,9 @@ from copy import deepcopy
 from time import perf_counter
 from urllib.parse import unquote
 
+import httpx
 import streamlit as st
-from openai import APIConnectionError, APITimeoutError, AuthenticationError, NotFoundError, PermissionDeniedError, RateLimitError
+from google.genai.errors import APIError
 
 import core
 import workflow
@@ -42,17 +43,23 @@ def selected_model():
 
 
 def failure_message(error, fallback):
-    if isinstance(error, AuthenticationError):
-        return "The AI service could not accept the configured API key. Update it in Streamlit secrets, then retry."
-    if isinstance(error, PermissionDeniedError):
-        return "The configured API project cannot use this model. Choose another model in Settings, then retry."
-    if isinstance(error, NotFoundError):
-        return "The selected model could not be found or is unavailable to this API project. Choose another model in Settings, then retry."
-    if isinstance(error, RateLimitError):
-        return "The AI service is currently at its usage limit. Check your API quota or try again later."
-    if isinstance(error, APITimeoutError):
+    if isinstance(error, APIError):
+        details = f"{error.status} {error.message}".upper()
+        if error.code == 401 or "API_KEY" in details or "API KEY" in details:
+            return "The AI service could not accept the configured API key. Update GEMINI_API_KEY in Streamlit secrets, then retry."
+        if error.code == 403:
+            return "The configured Gemini API key cannot use this model. Choose another model in Settings, then retry."
+        if error.code == 404:
+            return "The selected model could not be found or is unavailable to this API key. Choose another model in Settings, then retry."
+        if error.code == 429:
+            return "The AI service is currently at its usage limit. Check your Gemini API quota or try again later."
+        if error.code in (500, 503):
+            return "The AI service is temporarily unavailable. Retry when ready."
+        if error.code == 504:
+            return "The AI service took too long to respond. Retry when ready."
+    if isinstance(error, httpx.TimeoutException):
         return "The AI service took too long to respond. Retry when ready."
-    if isinstance(error, APIConnectionError):
+    if isinstance(error, httpx.TransportError):
         return "The AI service could not be reached. Retry when the connection is available."
     return fallback
 
@@ -76,7 +83,7 @@ def run_ai(state, operation, label="Thinking…"):
 
     def call():
         if not core.get_api_key():
-            state["error"] = "Add OPENAI_API_KEY to Streamlit secrets before continuing. Your conversation is still available."
+            state["error"] = "Add GEMINI_API_KEY to Streamlit secrets before continuing. Your conversation is still available."
             return None
         with st.spinner(label, show_time=True):
             return operation()

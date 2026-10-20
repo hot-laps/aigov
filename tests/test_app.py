@@ -1,6 +1,5 @@
 import httpx
 import pytest
-from openai import APIConnectionError
 from streamlit.testing.v1 import AppTest
 
 import core
@@ -112,7 +111,7 @@ def test_assessment_api_failure_keeps_chat_and_requires_explicit_retry(app, monk
         calls.append(schema)
         if schema is workflow.IntakeReview:
             return ready_review(request_data)
-        raise APIConnectionError(request=httpx.Request("POST", "https://api.openai.com/v1/responses"))
+        raise httpx.ConnectError("unreachable", request=httpx.Request("POST", "https://generativelanguage.googleapis.com/"))
 
     monkeypatch.setattr(core, "call_model", model)
     message = "\n".join(request_data.values())

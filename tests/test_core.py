@@ -131,7 +131,7 @@ def test_report_snapshots_and_json_roundtrip(monkeypatch, tmp_path, configuratio
     markdown = core.report_markdown(report)
     assert "ADVISORY" in markdown
     assert "Confirmed request snapshot" in markdown
-    assert "OPENAI_API_KEY" not in path.read_text()
+    assert "GEMINI_API_KEY" not in path.read_text()
 
 
 def test_unconfirmed_request_cannot_be_assessed(configuration):
@@ -183,23 +183,24 @@ def test_scoring_payload_excludes_past_decisions(monkeypatch, configuration, req
     assert set(captured) == {"request", "fields", "rubric", "missing_fields"}
 
 
-def test_sdk_uses_structured_outputs_without_stored_state_or_retries(monkeypatch):
+def test_sdk_uses_structured_outputs_without_retries(monkeypatch):
     captured = {}
     expected = core.Comparison(matches=[])
 
-    def parse(**kwargs):
+    def generate_content(**kwargs):
         captured.update(kwargs)
-        return SimpleNamespace(output_parsed=expected)
+        return SimpleNamespace(text=expected.model_dump_json())
 
     def client(**kwargs):
         captured["client"] = kwargs
-        return SimpleNamespace(responses=SimpleNamespace(parse=parse))
+        return SimpleNamespace(models=SimpleNamespace(generate_content=generate_content))
 
-    monkeypatch.setattr(core, "OpenAI", client)
+    monkeypatch.setattr(core.genai, "Client", client)
     assert core.call_model("Instructions", {}, core.Comparison) == expected
-    assert captured["store"] is False
-    assert captured["text_format"] is core.Comparison
-    assert captured["client"]["max_retries"] == 0
+    assert captured["config"].system_instruction == "Instructions"
+    assert captured["config"].response_mime_type == "application/json"
+    assert captured["config"].response_json_schema == core.Comparison.model_json_schema()
+    assert captured["client"]["http_options"].retry_options.attempts == 1
 
 
 def test_seed_and_evaluation_collections_are_distinct():

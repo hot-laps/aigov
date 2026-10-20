@@ -16,10 +16,10 @@ cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 Edit `.streamlit/secrets.toml` to contain your project API key:
 
 ```toml
-OPENAI_API_KEY = "your-api-key"
+GEMINI_API_KEY = "your-api-key"
 ```
 
-Create the key on the [OpenAI API keys page](https://platform.openai.com/api-keys) and configure API billing for the project. A ChatGPT subscription is separate from API access. The secrets file is ignored by Git and its contents are not copied into requests or configuration. `OPENAI_API_KEY` in the environment is supported as a fallback. The key is read on each AI action.
+Create the key in [Google AI Studio](https://aistudio.google.com/apikey). A Gemini app subscription is separate from API access; the free tier has lower rate limits. The secrets file is ignored by Git and its contents are not copied into requests or configuration. `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the environment is supported as a fallback. The key is read on each AI action.
 
 Start the app:
 
@@ -29,7 +29,7 @@ streamlit run app.py --server.address 127.0.0.1
 
 Open [localhost:8501](http://localhost:8501), or the local URL printed by Streamlit. If an already-running app shows a file-change notification, choose **Rerun** to load the updated interface.
 
-The Streamlit default model is `gpt-5.6-luna`. The **Settings** page offers GPT-6.1-Sol, GPT-5.6-Terra, and GPT-5.6-Luna. Save the selected model to apply it to subsequent intake, assessment, and comparison calls. Settings are saved in `data/settings.json` and survive restarts; the selected model takes precedence over `OPENAI_MODEL`. Before settings are saved, a supported `OPENAI_MODEL` value supplies the default. Model availability depends on the API project. Browsing precedents and editing configuration do not need an API key.
+The Streamlit default model is `gemini-3.8-flash`. The **Settings** page offers Gemini 4 Argon, Gemini 3.8 Flash, and Gemini 3.5 Flash-Lite. Save the selected model to apply it to subsequent intake, assessment, and comparison calls. Settings are saved in `data/settings.json` and survive restarts; the selected model takes precedence over `GEMINI_MODEL`. Before settings are saved, a supported `GEMINI_MODEL` value supplies the default. Model availability depends on the API key's project and tier. Browsing precedents and editing configuration do not need an API key.
 
 ## Use the six pages
 
@@ -82,7 +82,7 @@ Add another precedent by creating a `.md` file in `precedents/` with a title and
 
 ## API actions and failures
 
-Calls use the [Responses API with structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs), `store=False`, a 60-second timeout, and no SDK retry loops. [Response storage guidance](https://developers.openai.com/api/docs/guides/migrate-to-responses#4-decide-when-to-store-state) describes the storage setting.
+Calls use the Gemini API through the `google-genai` SDK with [structured output](https://ai.google.dev/gemini-api/docs/structured-output) (a JSON schema generated from the Pydantic models), a 60-second timeout, and no SDK retries. Python validates every response against the same Pydantic model.
 
 AI calls start only when a chat message is submitted, **Assess input so far** is selected, or a visible retry button is selected. Every model call shows a thinking spinner with elapsed time. The completed chat request shows its total time, including any automatic assessment and comparison. A successful intake review can trigger assessment and comparison in that same action. Ordinary widget reruns and page navigation do not repeat AI operations.
 
@@ -94,11 +94,11 @@ One shared UI action boundary covers AI calls, configuration loading, and file s
 
 Invalid rubric or prompt files open a configuration repair form rather than a traceback. Invalid edits are not saved, failed writes retain the submitted editor contents, and a configuration problem does not clear the conversation. Unreadable precedent files leave assessment available while comparison remains pending. There are no automatic recovery or retry loops.
 
-These controls prevent quotation mismatches, invalid identifiers, and missing rubric coverage from breaking the normal workflow. They cannot establish whether every model interpretation is factually correct; human review of the cited facts and reasoning is still needed. The design follows the [OpenAI structured-output guidance](https://developers.openai.com/api/docs/guides/structured-outputs), including handling incomplete or refused responses separately from successful assessments.
+These controls prevent quotation mismatches, invalid identifiers, and missing rubric coverage from breaking the normal workflow. They cannot establish whether every model interpretation is factually correct; human review of the cited facts and reasoning is still needed. The design follows the [Gemini structured-output guidance](https://ai.google.dev/gemini-api/docs/structured-output), including handling incomplete or refused responses separately from successful assessments.
 
 ## Validation status
 
-Tests are paused at the user's request. No automated tests or live OpenAI evaluations were run for this UI revision. The core test files describe recommendation rules. UI test definitions must be aligned with the new page and modal interactions before a future authorized run.
+Tests are paused at the user's request. No automated tests or live Gemini evaluations were run for this UI revision. The core test files describe recommendation rules. UI test definitions must be aligned with the new page and modal interactions before a future authorized run.
 
 When manual evaluation is authorized, use synthetic requests to review targeted questions, unknown facts, corrections, readiness, evidence, conflicting precedents, and materially different uses of the same tool. Ralph and Jeremy should refine the rubric and prompts based on the usefulness and consistency of those explanations.
 
